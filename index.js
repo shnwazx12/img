@@ -9,40 +9,39 @@ const OWNER_ID = Number(process.env.OWNER_ID || 0);
 const OWNER_USERNAME = process.env.OWNER_USERNAME || "@MrZyroDev";
 const AUTO_DELETE_MINUTES = Number(process.env.AUTO_DELETE_MINUTES || 0);
 
-// ✅ Render Port Binding (Required for Web Service)
+// Render Port Binding
 const port = process.env.PORT || 4000;
 
 if (!BOT_TOKEN) {
-  console.log("❌ BOT_TOKEN missing in env");
+  console.log("BOT_TOKEN missing in env");
   process.exit(1);
 }
 if (!IMGBB_API_KEY) {
-  console.log("❌ IMGBB_API_KEY missing in env");
+  console.log("IMGBB_API_KEY missing in env");
   process.exit(1);
 }
 
-// Tiny HTTP server so Render detects open port
+// Tiny HTTP server for Render
 http
   .createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("✅ Image to Link Maker Bot is running!");
+    res.end("Image to Link Maker Bot is running");
   })
-  .listen(port, () => console.log(`🌐 Web server running on port ${port}`));
+  .listen(port, () => console.log(`Web server running on port ${port}`));
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-// ✨ Stylish buttons
+// Stylish bold buttons (no emojis)
 const mainButtons = {
   reply_markup: {
     inline_keyboard: [
+      [{ text: "𝗨𝗣𝗟𝗢𝗔𝗗 • 𝗜𝗠𝗔𝗚𝗘", callback_data: "upload_image" }],
+      [{ text: "𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗘 • 𝗟𝗜𝗡𝗞", callback_data: "upload_image" }],
       [
-        { text: "✨ Upload Image 📸", callback_data: "upload_image" },
-        { text: "🌸 About Bot", callback_data: "about" }
+        { text: "𝗛𝗘𝗟𝗣", callback_data: "help" },
+        { text: "𝗔𝗕𝗢𝗨𝗧", callback_data: "about" }
       ],
-      [
-        { text: "🆘 Help Guide", callback_data: "help" },
-        { text: "👑 Owner", callback_data: "owner" }
-      ]
+      [{ text: "𝗢𝗪𝗡𝗘𝗥", callback_data: "owner" }]
     ]
   }
 };
@@ -75,109 +74,89 @@ async function uploadToImgbb(imageBuffer) {
   return upload.data?.data?.url;
 }
 
-// ✅ /start
+// /start
 bot.onText(/\/start/, async (msg) => {
   const text =
-    `👋 Hey ${msg.from.first_name} 💖\n\n` +
-    `📸 Send me any *image* and I will generate a *direct link* 🔗✨\n\n` +
-    `⚡ Auto Delete: ${AUTO_DELETE_MINUTES ? `${AUTO_DELETE_MINUTES} min` : "OFF"}\n` +
-    `👑 Owner: ${OWNER_USERNAME}\n`;
+    `Welcome ${msg.from.first_name}\n\n` +
+    `Send an image and I will generate a direct link.\n\n` +
+    `Auto Delete: ${AUTO_DELETE_MINUTES ? `${AUTO_DELETE_MINUTES} min` : "OFF"}\n` +
+    `Owner: ${OWNER_USERNAME}\n`;
 
-  const sent = await bot.sendMessage(msg.chat.id, text, {
-    parse_mode: "Markdown",
-    ...mainButtons
-  });
-
+  const sent = await bot.sendMessage(msg.chat.id, text, mainButtons);
   autoDelete(msg.chat.id, sent.message_id);
 });
 
-// ✅ /help
+// /help
 bot.onText(/\/help/, async (msg) => {
   const text =
-    `🆘 *Help Guide*\n\n` +
-    `📌 *How to use:*\n` +
-    `1) Send an image 📸\n` +
-    `2) Get direct link 🔗\n\n` +
-    `✨ Commands:\n` +
-    `/start - Start bot\n` +
-    `/help - Help\n` +
-    `/about - About\n\n` +
-    `👑 Owner: ${OWNER_USERNAME}\n`;
+    `Help\n\n` +
+    `How to use:\n` +
+    `1) Send an image\n` +
+    `2) Get direct link\n\n` +
+    `Commands:\n` +
+    `/start\n` +
+    `/help\n` +
+    `/about\n\n` +
+    `Owner: ${OWNER_USERNAME}\n`;
 
-  const sent = await bot.sendMessage(msg.chat.id, text, {
-    parse_mode: "Markdown",
-    ...mainButtons
-  });
-
+  const sent = await bot.sendMessage(msg.chat.id, text, mainButtons);
   autoDelete(msg.chat.id, sent.message_id);
 });
 
-// ✅ /about
+// /about
 bot.onText(/\/about/, async (msg) => {
   const text =
-    `🌸 *About This Bot*\n\n` +
-    `This bot converts your images into shareable links 🔗✨\n` +
-    `Fast • Clean • Render Ready 🚀\n\n` +
-    `👑 Owner: ${OWNER_USERNAME}\n`;
+    `About\n\n` +
+    `This bot converts images into shareable links.\n` +
+    `Fast and Render ready.\n\n` +
+    `Owner: ${OWNER_USERNAME}\n`;
 
-  const sent = await bot.sendMessage(msg.chat.id, text, {
-    parse_mode: "Markdown",
-    ...mainButtons
-  });
-
+  const sent = await bot.sendMessage(msg.chat.id, text, mainButtons);
   autoDelete(msg.chat.id, sent.message_id);
 });
 
-// ✅ Inline buttons handler
+// Buttons
 bot.on("callback_query", async (q) => {
   const chatId = q.message.chat.id;
   const data = q.data;
 
   try {
     if (data === "upload_image") {
-      const sent = await bot.sendMessage(chatId, "✨ Send your image now 📸💖");
+      const sent = await bot.sendMessage(chatId, "Send your image now.", mainButtons);
       autoDelete(chatId, sent.message_id);
     }
 
     if (data === "help") {
-      const sent = await bot.sendMessage(
-        chatId,
-        `🆘 *Help*\n\nSend image 📸 → Get link 🔗`,
-        { parse_mode: "Markdown", ...mainButtons }
-      );
+      const sent = await bot.sendMessage(chatId, "Send an image to get a link.", mainButtons);
       autoDelete(chatId, sent.message_id);
     }
 
     if (data === "about") {
-      const sent = await bot.sendMessage(
-        chatId,
-        `🌸 *About*\n\nImage ➜ Link Maker Bot 🔥`,
-        { parse_mode: "Markdown", ...mainButtons }
-      );
+      const sent = await bot.sendMessage(chatId, "Image to Link Maker Bot.", mainButtons);
       autoDelete(chatId, sent.message_id);
     }
 
     if (data === "owner") {
       const sent = await bot.sendMessage(
         chatId,
-        `👑 *Owner Info*\n\nUsername: ${OWNER_USERNAME}\nOwner ID: ${OWNER_ID || "Not Set"}`,
-        { parse_mode: "Markdown", ...mainButtons }
+        `Owner: ${OWNER_USERNAME}\nOwner ID: ${OWNER_ID || "Not Set"}`,
+        mainButtons
       );
       autoDelete(chatId, sent.message_id);
     }
 
     await bot.answerCallbackQuery(q.id);
   } catch (err) {
-    await bot.answerCallbackQuery(q.id, { text: "❌ Error", show_alert: false });
+    await bot.answerCallbackQuery(q.id, { text: "Error", show_alert: false });
   }
 });
 
-// ✅ Photo upload handler
+// Photo upload
 bot.on("photo", async (msg) => {
   const chatId = msg.chat.id;
 
   try {
-    const wait = await bot.sendMessage(chatId, "⏳ Uploading your image... 💫");
+    const wait = await bot.sendMessage(chatId, "Uploading...");
     autoDelete(chatId, wait.message_id);
 
     const photo = msg.photo[msg.photo.length - 1];
@@ -189,52 +168,33 @@ bot.on("photo", async (msg) => {
     const link = await uploadToImgbb(imageRes.data);
 
     if (!link) {
-      const fail = await bot.sendMessage(chatId, "❌ Upload failed. Try again 😢");
+      const fail = await bot.sendMessage(chatId, "Upload failed. Try again.");
       autoDelete(chatId, fail.message_id);
       return;
     }
 
-    const sent = await bot.sendMessage(
-      chatId,
-      `✅ *Image Uploaded Successfully!* 🎉\n\n🔗 *Direct Link:*\n${link}\n\n👑 Owner: ${OWNER_USERNAME}`,
-      { parse_mode: "Markdown", ...mainButtons }
-    );
-
+    const sent = await bot.sendMessage(chatId, `Uploaded\n\nLink:\n${link}`, mainButtons);
     autoDelete(chatId, sent.message_id);
   } catch (err) {
-    const sent = await bot.sendMessage(chatId, "❌ Upload failed! Please try again 😢");
+    const sent = await bot.sendMessage(chatId, "Upload failed. Please try again.");
     autoDelete(chatId, sent.message_id);
   }
 });
 
-// ✅ Broadcast (Owner only)
+// Broadcast (Owner only)
 bot.onText(/\/broadcast (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
 
   if (!isOwner(userId)) {
-    const sent = await bot.sendMessage(chatId, "❌ Only owner can use broadcast 👑");
+    const sent = await bot.sendMessage(chatId, "Only owner can use broadcast.");
     autoDelete(chatId, sent.message_id);
     return;
   }
 
   const text = match[1];
-  const sent = await bot.sendMessage(chatId, `📢 *Broadcast Sent!*\n\n${text}`, {
-    parse_mode: "Markdown"
-  });
+  const sent = await bot.sendMessage(chatId, `Broadcast Sent\n\n${text}`);
   autoDelete(chatId, sent.message_id);
 });
 
-// ✅ Non-image message reply
-bot.on("message", async (msg) => {
-  if (!msg.photo && msg.text && !msg.text.startsWith("/")) {
-    const sent = await bot.sendMessage(
-      msg.chat.id,
-      "📸 Please send an image only 🙂✨",
-      mainButtons
-    );
-    autoDelete(msg.chat.id, sent.message_id);
-  }
-});
-
-console.log("✅ Bot polling started...");
+console.log("Bot running...");
